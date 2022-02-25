@@ -1,0 +1,5 @@
+from enum import Enum, auto
+class {{ metadata['filename'] | kebab_to_pascal }}(Enum):
+  {%- for choice in choices %}
+  {{ choice | upper }} = auto()
+  {%- endfor %}

@@ -1,0 +1,11 @@
+metadata:
+  filename: simple-colors
+  process:
+    - ../templates: ../generated
+choices:
+  - red
+  - yellow
+  - green
+  - blue
+  - pink
+  - purple

@@ -1,0 +1,5 @@
+export enum {{ metadata['filename'] | kebab_to_pascal }} {
+  {%- for choice in choices %}
+  {{ choice | capitalize }},
+  {%- endfor %}
+}
