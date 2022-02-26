@@ -46,10 +46,9 @@ def dir_or_file_path(string):
 def parse_args():
     parser = argparse.ArgumentParser(description='Process files.')
     parser.add_argument(
-        '-s', '--source',
-        required=True,
+        'source',
         type=dir_or_file_path,
-        help='Source file'
+        help='Source file or directory'
     )
 
     return parser.parse_args()
