@@ -113,7 +113,8 @@ def parse_source(source_filepath):
             # print(f'Processing {os.path.relpath(source_file)} with {os.path.relpath(template_file)} to {os.path.relpath(output_file)}')
             with output_file.open('w') as out_file:
                 source_data['template_data']['filename'] = source_data['template_data'].get('filename', output_file.stem)
-                out_file.write(template.render(source_data['template_data']))
+                rendered_file = template.render(source_data['template_data'])
+                out_file.write(rendered_file)
                 console.print(f'\tCreated {os.path.relpath(output_file)}', style='green')
 
 def main():
