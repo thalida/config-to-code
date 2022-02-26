@@ -4,21 +4,24 @@ from pathlib import Path
 import os
 from yaml import load, CLoader as Loader
 from jinja2 import Environment, FileSystemLoader
+import humps.main as humps
 
-def jinja_kebab_to_pascal(string):
-    return ''.join(x.capitalize() for x in string.split('-'))
+def jinja_to_pascal_case(string):
+    return humps.pascalize(string)
 
-def jinja_snake_to_pascal(string):
-    return ''.join(x.capitalize() for x in string.split('_'))
+def jinja_to_camel_case(string):
+    return humps.camelize(string)
 
-def jinja_kebab_to_camel(string):
-    pascal = jinja_kebab_to_pascal(string)
-    return pascal[0].lower() + pascal[1:]
+def jinja_to_snake_case(string):
+    fixed = humps._fix_abbreviations(string)
+    return humps.separate_words(fixed, '_').lower()
 
-def jinja_snake_to_camel(string):
-    camel = jinja_snake_to_pascal(string)
-    return camel[0].lower() + camel[1:]
+def jinja_to_kebab_case(string):
+    fixed = humps._fix_abbreviations(string)
+    if humps.is_snakecase(string):
+        return '-'.join(fixed.split('_'))
 
+    return humps.separate_words(fixed, '-').lower()
 
 def dir_or_file_path(string):
     if not Path(string).exists():
@@ -88,8 +91,10 @@ def parse_source(source_filepath):
             template_files = [templates_path]
 
         jinjaEnv = Environment(loader=FileSystemLoader(templates_dir))
-        jinjaEnv.filters["kebab_to_pascal"] = jinja_kebab_to_pascal
-        jinjaEnv.filters["snake_to_pascal"] = jinja_snake_to_pascal
+        jinjaEnv.filters["to_pascal_case"] = jinja_to_pascal_case
+        jinjaEnv.filters["to_camel_case"] = jinja_to_camel_case
+        jinjaEnv.filters["to_snake_case"] = jinja_to_snake_case
+        jinjaEnv.filters["to_kebab_case"] = jinja_to_kebab_case
 
         for template_file in template_files:
             template = jinjaEnv.get_template(template_file.name)

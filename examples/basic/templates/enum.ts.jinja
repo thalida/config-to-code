@@ -1,4 +1,4 @@
-export enum {{ filename | kebab_to_pascal }} {
+export enum {{ filename | to_pascal_case }} {
   {%- for choice in choices %}
   {{ choice | capitalize }},
   {%- endfor %}
