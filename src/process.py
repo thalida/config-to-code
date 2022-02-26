@@ -29,11 +29,10 @@ def parse_args():
 
     return parser.parse_args()
 
-def parse_source(source_filename):
-    source_path = Path(source_filename)
-    source_data = load(source_path.read_text(), Loader=Loader)
+def get_source_data(source_path):
+    filedata = source_path.read_text()
+    source_data = load(filedata, Loader=Loader)
     source_name = source_path.stem
-    source_dir = source_path.parent
 
     if 'metadata' not in source_data:
         source_data['metadata'] = {}
@@ -41,37 +40,51 @@ def parse_source(source_filename):
     if 'filename' not in source_data['metadata']:
         source_data['metadata']['filename'] = source_name
 
-    process = source_data.get('metadata', {}).get('process', [])
-    for process_paths in process:
-        templates_filepath = list(process_paths.keys())[0]
-        output_filepath = list(process_paths.values())[0]
+    if 'process' not in source_data['metadata']:
+        source_data['metadata']['process'] = []
 
-        templates_path = Path(source_dir, templates_filepath)
-        templates_is_dir = templates_path.is_dir()
-        templates_dir = templates_path if templates_is_dir else templates_path.parent
+    return source_data
 
-        if templates_is_dir:
+
+def get_output_path(source_filename, template_filename, output_dir):
+    template_exts = template_filename.suffixes
+    if template_exts[-1] == '.jinja':
+        template_exts = template_exts[:-1]
+    output_ext = ''.join(template_exts)
+    output_filename = source_filename + output_ext
+    output_path = Path(output_dir, output_filename)
+    return output_path
+
+
+def parse_source(source_filename):
+    source_path = Path(source_filename)
+    source_data = get_source_data(source_path)
+
+    for process_paths in source_data["metadata"]["process"]:
+        templates_path = Path(source_path.parent, process_paths['template'])
+        output_dir = Path(source_path.parent, process_paths['output'])
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        if templates_path.is_dir():
+            templates_dir = templates_path
             template_filenames = [
                 filename for filename in templates_path.iterdir()
             ]
         else:
+            templates_dir = templates_path.parent
             template_filenames = [templates_path]
 
-        env = Environment(loader=FileSystemLoader(templates_dir))
-        env.filters["kebab_to_pascal"] = jinja_kebab_to_pascal
+        jinjaEnv = Environment(loader=FileSystemLoader(templates_dir))
+        jinjaEnv.filters["kebab_to_pascal"] = jinja_kebab_to_pascal
 
-        output_file_dir = Path(source_dir, output_filepath)
-        output_file_dir.mkdir(parents=True, exist_ok=True)
         for template_filename in template_filenames:
-            template_exts = template_filename.suffixes
-            if template_exts[-1] == '.jinja':
-                template_exts = template_exts[:-1]
-            output_file_ext = ''.join(template_exts)
-            output_file_name = source_data['metadata']['filename'] + output_file_ext
-            output_file_path = Path(output_file_dir, output_file_name)
-
-            template = env.get_template(template_filename.name)
-            with open(output_file_path, 'w') as output_file:
+            output_path = get_output_path(
+                source_data['metadata']['filename'],
+                template_filename,
+                output_dir
+            )
+            template = jinjaEnv.get_template(template_filename.name)
+            with open(output_path, 'w') as output_file:
                 template_data = source_data.get('template_data', {})
                 template_data['filename']  = source_data['metadata']['filename']
                 output_file.write(template.render(template_data))
@@ -84,8 +97,6 @@ def main():
             parse_source(str(source_filename.resolve()))
     else:
         parse_source(source_path.resolve())
-
-
 
 if __name__ == '__main__':
     main()

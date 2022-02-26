@@ -1,7 +1,8 @@
 metadata:
   filename: simple-colors
   process:
-    - ../templates: ../generated
+    - template: ../templates
+      output: ../generated
 template_data:
   choices:
     - red

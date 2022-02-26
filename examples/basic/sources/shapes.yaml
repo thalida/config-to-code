@@ -1,6 +1,7 @@
 metadata:
   process:
-    - ../templates: ../generated/shapes
+    - template: ../templates
+      output: ../generated/shapes
 template_data:
   choices:
     - square
