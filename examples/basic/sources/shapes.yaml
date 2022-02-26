@@ -1,8 +1,9 @@
 metadata:
   process:
     - ../templates: ../generated/shapes
-choices:
-  - square
-  - triangle
-  - circle
-  - diamond
+template_data:
+  choices:
+    - square
+    - triangle
+    - circle
+    - diamond

@@ -63,17 +63,18 @@ def parse_source(source_filename):
         output_file_dir = Path(source_dir, output_filepath)
         output_file_dir.mkdir(parents=True, exist_ok=True)
         for template_filename in template_filenames:
-            output_file_stem = source_data.get('metadata', {}).get('filename', source_name)
             template_exts = template_filename.suffixes
             if template_exts[-1] == '.jinja':
                 template_exts = template_exts[:-1]
             output_file_ext = ''.join(template_exts)
-            output_file_name = output_file_stem + output_file_ext
+            output_file_name = source_data['metadata']['filename'] + output_file_ext
             output_file_path = Path(output_file_dir, output_file_name)
 
             template = env.get_template(template_filename.name)
             with open(output_file_path, 'w') as output_file:
-                output_file.write(template.render(source_data))
+                template_data = source_data.get('template_data', {})
+                template_data['filename']  = source_data['metadata']['filename']
+                output_file.write(template.render(template_data))
 
 def main():
     args = parse_args()
