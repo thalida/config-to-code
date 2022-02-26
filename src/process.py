@@ -26,12 +26,12 @@ def jinja_to_kebab_case(string):
 
     return humps.separate_words(fixed, '-').lower()
 
-
 jinjaEnv = Environment()
 jinjaEnv.filters["to_pascal_case"] = jinja_to_pascal_case
 jinjaEnv.filters["to_camel_case"] = jinja_to_camel_case
 jinjaEnv.filters["to_snake_case"] = jinja_to_snake_case
 jinjaEnv.filters["to_kebab_case"] = jinja_to_kebab_case
+
 
 def dir_or_file_path(string):
     if not Path(string).exists():
@@ -43,6 +43,7 @@ def dir_or_file_path(string):
 
     return string
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Process files.')
     parser.add_argument(
@@ -52,6 +53,7 @@ def parse_args():
     )
 
     return parser.parse_args()
+
 
 def get_source_data(source_file):
     raw_data = source_file.read_text()
@@ -93,29 +95,37 @@ def parse_source(source_filepath):
         output_dir = output_path.parent if output_path.suffix else output_path
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        if templates_path.is_dir():
-            templates_dir = templates_path
-            template_files = [
-                path for path in templates_path.iterdir()
-            ]
-        else:
-            templates_dir = templates_path.parent
-            template_files = [templates_path]
+        process_templates(source_file, source_data, templates_path, output_path)
 
-        templateJinjaEnv = jinjaEnv.overlay(loader=FileSystemLoader(templates_dir))
-        for template_file in template_files:
-            template = templateJinjaEnv.get_template(template_file.name)
-            output_file = get_output_file(
-                source_file,
-                template_file,
-                output_path
-            )
-            # print(f'Processing {os.path.relpath(source_file)} with {os.path.relpath(template_file)} to {os.path.relpath(output_file)}')
-            with output_file.open('w') as out_file:
-                source_data['template_data']['filename'] = source_data['template_data'].get('filename', output_file.stem)
-                rendered_file = template.render(source_data['template_data'])
-                out_file.write(rendered_file)
-                console.print(f'\tCreated {os.path.relpath(output_file)}', style='green')
+
+def process_templates(source_file, source_data, templates_path, output_path):
+    if templates_path.is_dir():
+        templates_dir = templates_path
+        template_files = [
+            path for path in templates_path.iterdir()
+        ]
+    else:
+        templates_dir = templates_path.parent
+        template_files = [templates_path]
+
+    templateJinjaEnv = jinjaEnv.overlay(loader=FileSystemLoader(templates_dir))
+    for template_file in template_files:
+        template = templateJinjaEnv.get_template(template_file.name)
+        output_file = get_output_file(
+            source_file,
+            template_file,
+            output_path
+        )
+        generate_output(source_data, template, output_file)
+
+
+def generate_output(source_data, template, output_file):
+    with output_file.open('w') as out_file:
+        source_data['template_data']['filename'] = source_data['template_data'].get('filename', output_file.stem)
+        rendered_file = template.render(source_data['template_data'])
+        out_file.write(rendered_file)
+        console.print(f'\tCreated {os.path.relpath(output_file)}', style='green')
+
 
 def main():
     console.print('Config to Code', style='bold blue')
@@ -136,6 +146,7 @@ def main():
             console.print(f"\nStarting {os.path.relpath(source_file)}", style='bold yellow')
             parse_source(source_file.resolve())
             console.print("\tDone", style='bold green')
+
 
 if __name__ == '__main__':
     main()
