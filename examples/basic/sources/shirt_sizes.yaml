@@ -1,0 +1,13 @@
+metadata:
+  process:
+    - template: ../templates/enum.ts.jinja
+      output: ../generated/shirt_sizes/shirtSizes.ts
+    - template: ../templates/enum.py.jinja
+      output: ../generated/shirt_sizes
+template_data:
+  choices:
+    - xs
+    - sm
+    - md
+    - lg
+    - xl

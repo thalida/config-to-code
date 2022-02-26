@@ -1,0 +1,12 @@
+metadata:
+  process:
+    - template: ../templates
+      output: ../generated
+template_data:
+  choices:
+    - red
+    - yellow
+    - green
+    - blue
+    - pink
+    - purple

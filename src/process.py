@@ -1,10 +1,13 @@
-import errno
-import argparse
-from pathlib import Path
 import os
+import argparse
+import errno
+from pathlib import Path
+import humps.main as humps
+from rich.console import Console
 from yaml import load, CLoader as Loader
 from jinja2 import Environment, FileSystemLoader
-import humps.main as humps
+
+console = Console()
 
 def jinja_to_pascal_case(string):
     return humps.pascalize(string)
@@ -22,6 +25,13 @@ def jinja_to_kebab_case(string):
         return '-'.join(fixed.split('_'))
 
     return humps.separate_words(fixed, '-').lower()
+
+
+jinjaEnv = Environment()
+jinjaEnv.filters["to_pascal_case"] = jinja_to_pascal_case
+jinjaEnv.filters["to_camel_case"] = jinja_to_camel_case
+jinjaEnv.filters["to_snake_case"] = jinja_to_snake_case
+jinjaEnv.filters["to_kebab_case"] = jinja_to_kebab_case
 
 def dir_or_file_path(string):
     if not Path(string).exists():
@@ -90,33 +100,40 @@ def parse_source(source_filepath):
             templates_dir = templates_path.parent
             template_files = [templates_path]
 
-        jinjaEnv = Environment(loader=FileSystemLoader(templates_dir))
-        jinjaEnv.filters["to_pascal_case"] = jinja_to_pascal_case
-        jinjaEnv.filters["to_camel_case"] = jinja_to_camel_case
-        jinjaEnv.filters["to_snake_case"] = jinja_to_snake_case
-        jinjaEnv.filters["to_kebab_case"] = jinja_to_kebab_case
-
+        templateJinjaEnv = jinjaEnv.overlay(loader=FileSystemLoader(templates_dir))
         for template_file in template_files:
-            template = jinjaEnv.get_template(template_file.name)
+            template = templateJinjaEnv.get_template(template_file.name)
             output_file = get_output_file(
                 source_file,
                 template_file,
                 output_path
             )
-            print(f'Processing {os.path.relpath(source_file)} with {os.path.relpath(template_file)} to {os.path.relpath(output_file)}')
+            # print(f'Processing {os.path.relpath(source_file)} with {os.path.relpath(template_file)} to {os.path.relpath(output_file)}')
             with output_file.open('w') as out_file:
                 template_data = source_data.get('template_data', {})
                 template_data['filename']  = output_file.stem
                 out_file.write(template.render(template_data))
+                console.print(f'\tCreated {os.path.relpath(output_file)}', style='green')
 
 def main():
+    console.print('Config to Code', style='bold blue')
     args = parse_args()
     source_path = Path(args.source)
+    source_files = []
+
     if source_path.is_dir():
-        for source_filename in source_path.iterdir():
-            parse_source(source_filename.resolve())
+        source_files = [source_filename for source_filename in source_path.iterdir()]
+        console.print(f'Processing {len(source_files)} files in {os.path.relpath(source_path)}', style='blue')
     else:
-        parse_source(source_path.resolve())
+        console.print(f'Processing file {os.path.relpath(source_path)}', style='blue')
+        source_files = [source_path]
+
+    with console.status("[bold green]Processing files...") as status:
+        while source_files:
+            source_file = source_files.pop(0)
+            console.print(f"\nStarting {os.path.relpath(source_file)}", style='bold yellow')
+            parse_source(source_file.resolve())
+            console.print("\tDone", style='bold green')
 
 if __name__ == '__main__':
     main()
