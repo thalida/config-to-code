@@ -63,6 +63,9 @@ def get_source_data(source_file):
     if 'process' not in source_data['metadata']:
         source_data['metadata']['process'] = []
 
+    if 'template_data' not in source_data:
+        source_data['template_data'] = {}
+
     return source_data
 
 
@@ -109,9 +112,8 @@ def parse_source(source_filepath):
             )
             # print(f'Processing {os.path.relpath(source_file)} with {os.path.relpath(template_file)} to {os.path.relpath(output_file)}')
             with output_file.open('w') as out_file:
-                template_data = source_data.get('template_data', {})
-                template_data['filename']  = output_file.stem
-                out_file.write(template.render(template_data))
+                source_data['template_data']['filename'] = source_data['template_data'].get('filename', output_file.stem)
+                out_file.write(template.render(source_data['template_data']))
                 console.print(f'\tCreated {os.path.relpath(output_file)}', style='green')
 
 def main():
